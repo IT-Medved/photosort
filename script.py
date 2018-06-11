@@ -92,7 +92,7 @@ def main():
 
             fileExtension = os.path.splitext(name)[1]
             # Задаем название импортированного файла.
-            newFileName = '{}-{}-{}'.format(year + month + day,hour,
+            newFileName = '{}-{}-{}'.format(year + month + day, hour,
                                                  minute)
             path = dirslist[1]
 
@@ -100,6 +100,7 @@ def main():
                 print('Создаем новую папку')
                 os.makedirs(path, exist_ok=True)
             newPath = os.path.join(path, newFileName)
+            # Найдем подходящие имя для файла
             tmpPath = newPath
             fileindex = 1
             while os.path.exists(tmpPath + fileExtension):
