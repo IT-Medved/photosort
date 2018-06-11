@@ -2,16 +2,17 @@
 
 import sys
 import os
+import shutil
 # На всякий случай подстрахуемся от отсутствия ExifRead`а.
 try:
     import exifread
-    import shutil
+
 except ImportError:
     sys.exit("Для работы скрипта необходим модуль EXIFREAD, \
             а он у вас, похоже, не установлен. \
              \nЗадание не выполнено.")
 
-DEFAULT_OUTPUT = r'D:\YandexDisk\Отпуск\fotoPosle'
+DEFAULT_OUTPUT = r'D:\YandexDisk\Отпуск\after'
 
 
 def confirm():
@@ -91,15 +92,20 @@ def main():
 
             fileExtension = os.path.splitext(name)[1]
             # Задаем название импортированного файла.
-            newFileName = '{}-{}-{}-{}_{}{}'.format(year + month + day,hour,
-                                                 minute, sec, i, fileExtension)
+            newFileName = '{}-{}-{}'.format(year + month + day,hour,
+                                                 minute)
             path = dirslist[1]
 
             if not os.path.exists(path):
                 print('Создаем новую папку')
                 os.makedirs(path, exist_ok=True)
-
             newPath = os.path.join(path, newFileName)
+            tmpPath = newPath
+            fileindex = 1
+            while os.path.exists(tmpPath + fileExtension):
+                tmpPath = newPath + '_{}'.format(fileindex)
+                fileindex += 1
+            newPath = tmpPath + fileExtension
             try:
                 shutil.copy2(filePath, newPath)
                 print('OK')
