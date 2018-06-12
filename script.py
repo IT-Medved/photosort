@@ -3,6 +3,7 @@
 import sys
 import os
 import shutil
+from pymediainfo import MediaInfo
 # На всякий случай подстрахуемся от отсутствия ExifRead`а.
 try:
     import exifread
@@ -12,8 +13,17 @@ except ImportError:
             а он у вас, похоже, не установлен. \
              \nЗадание не выполнено.")
 
-DEFAULT_OUTPUT = r'D:\YandexDisk\Отпуск\after'
+# На всякий случай подстрахуемся от отсутствия cv2.
+try:
+    import cv2
+    import enzyme
+except ImportError:
+    sys.exit("Для работы скрипта необходим модуль CV, \
+            а он у вас, похоже, не установлен. \
+             \nЗадание не выполнено.")
 
+DEFAULT_OUTPUT = r'D:\YandexDisk\Отсортировать\after'
+DEFAULT_INPUT = r'D:\YandexDisk\Отсортировать\before'
 
 def confirm():
     while True:
@@ -58,8 +68,8 @@ def main():
     print('Источник импорта: ', dirslist[0])
     print('Дирректория назначения: ', dirslist[1])
     # Просим подтверждение перед началом работы.
-    if not confirm():
-        sys.exit("Задание отменено")
+    #if not confirm():
+     #   sys.exit("Задание отменено")
 
     # Задаем счетчики "плохих" и "хороших" операций.
     fTotal = okOp = badOp = 0
@@ -72,25 +82,38 @@ def main():
             fTotal += 1
             filePath = os.path.join(root, name)
             # Отображаем текущий процесс и прогресс выполнения.
+            fileExtension = os.path.splitext(name)[1]
             print('Обработка файла {} из {} (дир. -= {} =-)'
                   .format(i, len(files), os.path.basename(root).upper()))
-            with open(filePath, 'rb') as f:
-                tags = exifread.process_file(f, details=False)
-                exifDateTime = tags.get('EXIF DateTimeOriginal')
+            if fileExtension.upper() == '.MP4' and MediaInfo.can_parse():
+                #continue
+                media_info = MediaInfo.parse(filePath)
+                encodedDate = media_info.tracks[0].file_creation_date__local.replace('-', ':') if media_info.tracks[0].encoded_date == '' else media_info.tracks[0].encoded_date.replace('-', ':')
+                exifDateTime = encodedDate
 
-                # При отсутствии у фото EXIF-данных - файл пропускаем,
-                # занося его в список "плохих" файлов.
-                if not exifDateTime:
-                    print('Отсутствуют EXIF данные. Файл пропущен!!!', name)
-                    badOp += 1
-                    badFiles.append(filePath)
-                    continue
+            elif fileExtension == '.JPG':
+                with open(filePath, 'rb') as f:
+                    tags = exifread.process_file(f, details=False)
+                    exifDateTime = tags.get('EXIF DateTimeOriginal')
+
+                    # При отсутствии у фото EXIF-данных - файл пропускаем,
+                    # занося его в список "плохих" файлов.
+                    if not exifDateTime:
+                        print('Отсутствуют EXIF данные. Файл пропущен!!!', name)
+                        badOp += 1
+                        badFiles.append(filePath)
+                        continue
+            else:
+                print('Неизвестный файл', name)
+                badOp += 1
+                badFiles.append(filePath)
+                continue
 
             exifDate, exifTime = str(exifDateTime).split(' ')
             year, month, day = exifDate.split(':')
             hour, minute, sec = exifTime.split(':')
 
-            fileExtension = os.path.splitext(name)[1]
+
             # Задаем название импортированного файла.
             newFileName = '{}-{}-{}'.format(year + month + day, hour,
                                                  minute)
