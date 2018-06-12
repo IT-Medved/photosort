@@ -3,6 +3,7 @@
 import sys
 import os
 import shutil
+from datetime import datetime
 from pymediainfo import MediaInfo
 # На всякий случай подстрахуемся от отсутствия ExifRead`а.
 try:
@@ -14,13 +15,7 @@ except ImportError:
              \nЗадание не выполнено.")
 
 # На всякий случай подстрахуемся от отсутствия cv2.
-try:
-    import cv2
-    import enzyme
-except ImportError:
-    sys.exit("Для работы скрипта необходим модуль CV, \
-            а он у вас, похоже, не установлен. \
-             \nЗадание не выполнено.")
+
 
 DEFAULT_OUTPUT = r'D:\YandexDisk\Отсортировать\after'
 DEFAULT_INPUT = r'D:\YandexDisk\Отсортировать\before'
@@ -86,10 +81,11 @@ def main():
             print('Обработка файла {} из {} (дир. -= {} =-)'
                   .format(i, len(files), os.path.basename(root).upper()))
             if fileExtension.upper() == '.MP4' and MediaInfo.can_parse():
-                #continue
                 media_info = MediaInfo.parse(filePath)
-                encodedDate = media_info.tracks[0].file_creation_date__local.replace('-', ':') if media_info.tracks[0].encoded_date == '' else media_info.tracks[0].encoded_date.replace('-', ':')
-                exifDateTime = encodedDate
+                # wrongDate = datetime.strptime(media_info.tracks[0].encoded_date, "UTC %Y-%m-%d %H:%M:%S").year == 1970
+                # encodedDate = media_info.tracks[0].file_creation_date__local.replace('-', ':') if wrongDate else media_info.tracks[0].encoded_date.replace('-', ':')
+                encodedDate = media_info.tracks[0].encoded_date.replace('-', ':')
+                exifDateTime = encodedDate.replace('UTC ', '')
 
             elif fileExtension == '.JPG':
                 with open(filePath, 'rb') as f:
